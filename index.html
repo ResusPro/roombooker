@@ -4,9 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Room Booker</title>
+    <link rel="manifest" href="./manifest.json">
+    <meta name="theme-color" content="#007bff">
     <style>
         body { font-family: sans-serif; padding: 20px; text-align: center; background: #f4f7f6; }
-        .btn { background: #007bff; color: white; border: none; padding: 15px 30px; font-size: 16px; border-radius: 8px; width: 100%; max-width: 300px; }
+        .btn { background: #007bff; color: white; border: none; padding: 15px 30px; font-size: 16px; border-radius: 8px; width: 100%; max-width: 300px; font-weight: bold; }
         #debug-console { background: #1e1e1e; color: #00ff00; font-family: monospace; font-size: 12px; padding: 15px; margin-top: 20px; text-align: left; border-radius: 8px; min-height: 150px; }
     </style>
 </head>
@@ -15,7 +17,7 @@
     <h2>Magpas Room Booker</h2>
     <button id="enable-notifications-btn" class="btn">Enable Push Notifications</button>
 
-    <div id="debug-console">> Console Initialized. Tap button...</div>
+    <div id="debug-console">> Console Initialized. Checking PWA status...</div>
 
     <script>
         window.onerror = function(message, source, lineno, colno, error) {
@@ -30,35 +32,36 @@
             debugConsole.innerHTML += `<div style="color:${color};">> ${msg}</div>`;
         }
 
-        log('Script successfully loaded and parsed.', '#ffff00');
+        // Catch the native installation prompt if the browser offers it
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            log('SUCCESS: Browser recognized PWA! Install prompt is ready.', '#51cf66');
+        });
+
+        window.addEventListener('DOMContentLoaded', async () => {
+            log('Script loaded. Registering Service Worker...');
+            try {
+                const reg = await navigator.serviceWorker.register('./sw.js');
+                log(`Service Worker Registered! Scope: ${reg.scope}`, '#ffff00');
+            } catch (err) {
+                log(`SW REGISTRATION FAILED: ${err.message}`, 'red');
+            }
+        });
 
         debugBtn.addEventListener('click', async () => {
-            log('CLICK DETECTED!', '#ffffff');
-            
+            log('Button clicked. Requesting notification permission...');
             try {
-                log('Checking core browser APIs...');
-                if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-                    log('Error: Browser lacks Service Worker or Push support.', 'red');
-                    return;
-                }
-                
-                // FIX: Register the Service Worker FIRST. 
-                // Chrome on Android often requires an active SW context before showing the prompt.
-                log('Step 1: Registering sw.js...');
-                const reg = await navigator.serviceWorker.register('./sw.js');
-                log(`SW Context Active! Scope: ${reg.scope}`, '#ffff00');
-                
-                // Step 2: Request permission inside the active registration context
-                log('Step 2: Requesting notification permission...');
                 const perm = await Notification.requestPermission();
-                log(`Result from browser: ${perm}`, perm === 'granted' ? '#00ff00' : 'red');
+                log(`Permission outcome: ${perm}`, perm === 'granted' ? '#00ff00' : 'red');
                 
-                if (perm === 'granted') {
-                    log('SUCCESS! Notifications allowed.', '#00ff00');
+                if (perm === 'granted' && deferredPrompt) {
+                    log('Triggering app installation prompt...');
+                    deferredPrompt.prompt();
                 }
             } catch (err) {
-                log(`CRASH: ${err.name} - ${err.message}`, 'red');
-                console.error(err);
+                log(`CRASH: ${err.message}`, 'red');
             }
         });
     </script>
