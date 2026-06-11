@@ -1,30 +1,38 @@
-const CACHE_NAME = 'magpas-reminder-v1';
-const ASSETS = [
-  '/',
-  '/index.html',
-  '/manifest.json'
-];
+// sw.js - Service Worker for Magpas Room Booker
 
-// Install Event - Cache the core application shell
-self.addEventListener('install', event => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => {
-      console.log('Caching app shell');
-      return cache.addAll(ASSETS);
-    })
-  );
+// Install event - activates the worker immediately
+self.addEventListener('install', (event) => {
+    self.skipWaiting();
+    console.log('Service Worker installed.');
 });
 
-// Activate Event - Clean up old caches if necessary
-self.addEventListener('activate', event => {
-  console.log('Service Worker activated.');
+// Activate event - takes control of the page immediately
+self.addEventListener('activate', (event) => {
+    event.waitUntil(self.clients.claim());
+    console.log('Service Worker activated.');
 });
 
-// Fetch Event - Serve assets from cache if offline
-self.addEventListener('fetch', event => {
-  event.respondWith(
-    caches.match(event.request).then(cachedResponse => {
-      return cachedResponse || fetch(event.request);
-    })
-  );
+// Listen for incoming push notifications sent from the server/script
+self.addEventListener('push', (event) => {
+    let data = { title: 'Room Booking Reminder', body: 'Time to book your room for your upcoming shift!' };
+    
+    if (event.data) {
+        try {
+            data = event.data.json();
+        } catch (e) {
+            data.body = event.data.text();
+        }
+    }
+
+    const options = {
+        body: data.body,
+        icon: './icon.png', // Placeholder icon link
+        badge: './badge.png',
+        vibrate: [200, 100, 200],
+        requireInteraction: true // Keeps the notification on screen until tapped
+    };
+
+    event.waitUntil(
+        self.registration.showNotification(data.title, options)
+    );
 });
