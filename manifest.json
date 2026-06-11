@@ -1,21 +1,21 @@
 {
-  "short_name": "ShiftReminder",
-  "name": "Magpas Shift Room Booker",
+  "short_name": "Room Booker",
+  "name": "Magpas Room Booker",
   "icons": [
     {
-      "src": "icon-192.png",
+      "src": "https://via.placeholder.com/192.png",
       "type": "image/png",
       "sizes": "192x192"
     },
     {
-      "src": "icon-512.png",
+      "src": "https://via.placeholder.com/512.png",
       "type": "image/png",
       "sizes": "512x512"
     }
   ],
-  "start_url": "/index.html",
-  "background_color": "#ffffff",
+  "start_url": "./index.html",
+  "background_color": "#f4f7f6",
+  "theme-color": "#007bff",
   "display": "standalone",
-  "theme_color": "#000000",
   "orientation": "portrait"
 }
