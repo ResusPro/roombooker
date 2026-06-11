@@ -4,109 +4,62 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Room Booker</title>
-    <link rel="manifest" href="./manifest.json">
     <style>
-        :root {
-            --bg-color: #f4f7f6;
-            --card-bg: #ffffff;
-            --text-color: #333333;
-            --primary-color: #007bff;
-            --primary-hover: #0056b3;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            margin: 0;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 80vh;
-        }
-
-        .container {
-            background: var(--card-bg);
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            text-align: center;
-            max-width: 400px;
-            width: 100%;
-            box-sizing: border-box;
-        }
-
-        h1 {
-            margin-top: 0;
-            font-size: 24px;
-        }
-
-        p {
-            color: #666;
-            font-size: 14px;
-            line-height: 1.5;
-            margin-bottom: 25px;
-        }
-
-        .btn {
-            background-color: var(--primary-color);
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            font-size: 16px;
-            font-weight: 600;
-            border-radius: 8px;
-            cursor: pointer;
-            width: 100%;
-            transition: background-color 0.2s ease;
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        .btn:active {
-            background-color: var(--primary-hover);
-        }
-
-        /* On-screen mobile debugger styling */
-        #debug-console {
-            width: 100%;
-            max-width: 500px;
-            background: #1e1e1e;
-            color: #00ff00;
-            font-family: 'Courier New', Courier, monospace;
-            font-size: 11px;
-            padding: 15px;
-            border-radius: 8px;
-            margin-top: 30px;
-            box-sizing: border-box;
-            text-align: left;
-            max-height: 200px;
-            overflow-y: auto;
-            box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
-        }
-        .debug-entry {
-            margin-bottom: 4px;
-            border-bottom: 1px solid #2d2d2d;
-            padding-bottom: 2px;
-        }
+        body { font-family: sans-serif; padding: 20px; text-align: center; background: #f4f7f6; }
+        .btn { background: #007bff; color: white; border: none; padding: 15px 30px; font-size: 16px; border-radius: 8px; width: 100%; max-width: 300px; }
+        #debug-console { background: #1e1e1e; color: #00ff00; font-family: monospace; font-size: 12px; padding: 15px; margin-top: 20px; text-align: left; border-radius: 8px; min-height: 100px; }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <h1>Magpas Room Booker</h1>
-        <p>Get alerted to reserve your room exactly 7 days before your upcoming shifts.</p>
-        <button id="enable-notifications-btn" class="btn">Enable Push Notifications</button>
-    </div>
+    <h2>Magpas Room Booker</h2>
+    <button id="enable-notifications-btn" class="btn">Enable Push Notifications</button>
 
-    <div id="debug-console">
-        <div class="debug-entry" style="color: #888;">[System] Mobile Debug Console Active...</div>
-    </div>
+    <div id="debug-console">> Console Initialized. Tap button...</div>
 
     <script>
+        // Catch ANY immediate parsing or execution errors on load
+        window.onerror = function(message, source, lineno, colno, error) {
+            document.getElementById('debug-console').innerHTML += `<div style="color:red;">LOAD ERROR: ${message} at line ${lineno}</div>`;
+            return false;
+        };
+
         const debugBtn = document.getElementById('enable-notifications-btn');
         const debugConsole = document.getElementById('debug-console');
+
+        function log(msg, color = '#00ff00') {
+            debugConsole.innerHTML += `<div style="color:${color};">> ${msg}</div>`;
+        }
+
+        // Test if JavaScript is working at all
+        log('Script successfully loaded and parsed.', '#ffff00');
+
+        debugBtn.addEventListener('click', async () => {
+            log('CLICK DETECTED!', '#ffffff');
+            
+            try {
+                log('Checking APIs...');
+                if (!('serviceWorker' in navigator)) {
+                    log('Error: serviceWorker missing from navigator', 'red');
+                    return;
+                }
+                
+                log('Requesting permission...');
+                const perm = await Notification.requestPermission();
+                log(`Result: ${perm}`, '#ffff00');
+                
+                if (perm === 'granted') {
+                    log('Registering sw.js...');
+                    const reg = await navigator.serviceWorker.register('./sw.js');
+                    log(`Success! Scope: ${reg.scope}`, '#00ff00');
+                }
+            } catch (err) {
+                log(`CRASH: ${err.message}`, 'red');
+            }
+        });
+    </script>
+</body>
+</html>
 
         // Helper function to log text to the screen
         function logToScreen(message, type = 'info') {
