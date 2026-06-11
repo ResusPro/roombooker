@@ -7,7 +7,7 @@
     <style>
         body { font-family: sans-serif; padding: 20px; text-align: center; background: #f4f7f6; }
         .btn { background: #007bff; color: white; border: none; padding: 15px 30px; font-size: 16px; border-radius: 8px; width: 100%; max-width: 300px; }
-        #debug-console { background: #1e1e1e; color: #00ff00; font-family: monospace; font-size: 12px; padding: 15px; margin-top: 20px; text-align: left; border-radius: 8px; min-height: 100px; }
+        #debug-console { background: #1e1e1e; color: #00ff00; font-family: monospace; font-size: 12px; padding: 15px; margin-top: 20px; text-align: left; border-radius: 8px; min-height: 150px; }
     </style>
 </head>
 <body>
@@ -18,7 +18,6 @@
     <div id="debug-console">> Console Initialized. Tap button...</div>
 
     <script>
-        // Catch ANY immediate parsing or execution errors on load
         window.onerror = function(message, source, lineno, colno, error) {
             document.getElementById('debug-console').innerHTML += `<div style="color:red;">LOAD ERROR: ${message} at line ${lineno}</div>`;
             return false;
@@ -31,52 +30,37 @@
             debugConsole.innerHTML += `<div style="color:${color};">> ${msg}</div>`;
         }
 
-        // Test if JavaScript is working at all
         log('Script successfully loaded and parsed.', '#ffff00');
 
         debugBtn.addEventListener('click', async () => {
             log('CLICK DETECTED!', '#ffffff');
             
             try {
-                log('Checking APIs...');
-                if (!('serviceWorker' in navigator)) {
-                    log('Error: serviceWorker missing from navigator', 'red');
+                log('Checking core browser APIs...');
+                if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+                    log('Error: Browser lacks Service Worker or Push support.', 'red');
                     return;
                 }
                 
-                log('Requesting permission...');
+                // FIX: Register the Service Worker FIRST. 
+                // Chrome on Android often requires an active SW context before showing the prompt.
+                log('Step 1: Registering sw.js...');
+                const reg = await navigator.serviceWorker.register('./sw.js');
+                log(`SW Context Active! Scope: ${reg.scope}`, '#ffff00');
+                
+                // Step 2: Request permission inside the active registration context
+                log('Step 2: Requesting notification permission...');
                 const perm = await Notification.requestPermission();
-                log(`Result: ${perm}`, '#ffff00');
+                log(`Result from browser: ${perm}`, perm === 'granted' ? '#00ff00' : 'red');
                 
                 if (perm === 'granted') {
-                    log('Registering sw.js...');
-                    const reg = await navigator.serviceWorker.register('./sw.js');
-                    log(`Success! Scope: ${reg.scope}`, '#00ff00');
+                    log('SUCCESS! Notifications allowed.', '#00ff00');
                 }
             } catch (err) {
-                log(`CRASH: ${err.message}`, 'red');
+                log(`CRASH: ${err.name} - ${err.message}`, 'red');
+                console.error(err);
             }
         });
     </script>
 </body>
 </html>
-
-        // Helper function to log text to the screen
-        function logToScreen(message, type = 'info') {
-            const entry = document.createElement('div');
-            entry.className = 'debug-entry';
-            
-            if (type === 'error') entry.style.color = '#ff6b6b';
-            if (type === 'success') entry.style.color = '#51cf66';
-            
-            const timestamp = new Date().toLocaleTimeString();
-            entry.innerText = `[${timestamp}] ${message}`;
-            
-            debugConsole.appendChild(entry);
-            debugConsole.scrollTop = debugConsole.scrollHeight;
-        }
-
-        // Run basic compatibility checks on page load
-        window.addEventListener('DOMContentLoaded', () => {
-            logToScreen('App loaded.');
-            logToScreen(`Current
