@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Magpas Shift Room Booker</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#000000">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f4f4f9;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        main {
+            width: 100%;
+            max-width: 500px;
+            background: #ffffff;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .shift-card {
+            border-left: 5px solid #ff4757;
+            background: #ffe0e3;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+        .status {
+            font-size: 0.9em;
+            color: #666;
+            margin-top: 5px;
+        }
+        button {
+            background-color: #007aff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 10px;
+        }
+        button:disabled {
+            background-color: #ccc;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Shift Room Booker</h1>
+        <p>7-Day Notification Assistant</p>
+    </header>
+
+    <main>
+        <h2>Status Panel</h2>
+        <div id="setup-container">
+            <button id="auth-btn" onclick="requestNotificationPermission()">Enable Push Notifications</button>
+        </div>
+        <div id="shifts-container">
+            <p class="status">PWA Shell Ready. Setup notification access above to link device tokens.</p>
+        </div>
+    </main>
+
+    <script>
+        // Register Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(reg => console.log('Service Worker registered:', reg.scope))
+                    .catch(err => console.error('Service Worker registration failed:', err));
+            });
+        }
+
+        // Request Permission
+        async function requestNotificationPermission() {
+            const permission = await Notification.requestPermission();
+            if (permission === 'granted') {
+                document.getElementById('auth-btn').disabled = true;
+                document.getElementById('auth-btn').innerText = 'Notifications Enabled';
+                configurePushSubscription();
+            } else {
+                console.error('Permission denied for notifications.');
+            }
+        }
+
+        // Configure Push Setup
+        async function configurePushSubscription() {
+            if (!('serviceWorker' in navigator)) return;
+            
+            const reg = await navigator.serviceWorker.ready;
+            const sub = await reg.pushManager.getSubscription();
+            
+            if (sub === null) {
+                // Replace string with your final VAPID key if implementing raw Web Push
+                const newSub = await reg.pushManager.subscribe({
+                    userVisibleOnly: true,
+                    applicationServerKey: 'your-public-vapid-key' 
+                });
+                console.log('New Device Subscription Payload:', JSON.stringify(newSub));
+                // Next step: post token payload to backend endpoint
+            } else {
+                console.log('Active Device Subscription Payload:', JSON.stringify(sub));
+            }
+        }
+    </script>
+</body>
+</html>
